@@ -1,4 +1,11 @@
 import requests
+import os
+import json
+import random
+
+headers_file = open("user_agents.txt", "r")
+headers = headers_file.readlines()
+headers_file.close()
 
 url = "https://kinnisvara24.ee/search"
 RUN = True
@@ -85,8 +92,9 @@ search_obj = {
 
 full_data = []
 while RUN:
-    z = requests.post(url, json=search_obj)
-
+    z = requests.post(url, json=search_obj, headers={
+                      "User-Agent": headers[random.randint(0, 1000)].strip()})
+    print(z)
     if len(z.json()["data"]) == 0:
         RUN = False
     else:
@@ -110,4 +118,10 @@ while RUN:
                 permalink
             """
     search_obj["page"] += 1
-print(full_data)
+
+print(len(full_data))
+json_object = json.dumps(full_data, indent=4)
+
+os.remove("korteridKinnisvara.json")
+with open("korteridKinnisvara.json", "w") as outfile:
+    outfile.write(json_object)
