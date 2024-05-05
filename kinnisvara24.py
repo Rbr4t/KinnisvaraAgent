@@ -93,18 +93,19 @@ search_obj = {
 full_data = []
 while RUN:
     z = requests.post(url, json=search_obj, headers={
-                      "User-Agent": headers[random.randint(0, 1000)].strip()})
-    print(z)
-    if len(z.json()["data"]) == 0:
-        RUN = False
-    else:
+                      "User-Agent": headers[random.randint(0, 1000)].strip(), "Accept": "application/json"})
+    print(search_obj["page"])
+
+    try:
+        if len(z.json()["data"]) == 0:
+            RUN = False
         for d in z.json()["data"]:
 
             # More info can be extracted with more attributes
 
             full_data.append({
                 "price": d["hind"],
-                "area": d["area"],
+                "area": float(d["area"]),
                 "rooms": d["rooms"],
                 "permalink": d["permalink"],
             })
@@ -117,7 +118,10 @@ while RUN:
                 submitted
                 permalink
             """
-    search_obj["page"] += 1
+        search_obj["page"] += 1
+
+    except json.decoder.JSONDecodeError:
+        pass
 
 print(len(full_data))
 json_object = json.dumps(full_data, indent=4)

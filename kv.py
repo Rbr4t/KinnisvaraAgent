@@ -38,17 +38,13 @@ while True:
         print("ERROR")
         time.sleep(random.randint(10, 20))
         continue
-    # elif "Turvakontroll" in soup.text:
-    #     print("TURVAKONTROLL")
-    #     time.sleep(random.randint(10, 20))
-    #     continue
 
     try:
         elements = soup.find(
             "div", class_="results results-default").find_all("article")
     except AttributeError:
-        with open("output.txt", "w") as file:
-            file.write(soup.text)
+        time.sleep(random.randint(1, 5))
+        continue
 
     for e in elements:
         try:
