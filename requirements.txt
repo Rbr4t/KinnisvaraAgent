@@ -10,6 +10,7 @@ importlib_metadata==7.1.0
 lxml==5.2.1
 lxml_html_clean==0.1.1
 parse==1.20.1
+psycopg2-binary==2.9.9
 pyee==11.1.0
 pyppeteer==2.0.0
 pyquery==2.0.0
