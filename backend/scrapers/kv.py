@@ -17,14 +17,12 @@ flag = True
 # This is how I'm going to extract more info for future development, that search url is going to give me all the necessary links
 
 
-def get_descriptionKV(url):
-
+def getDescriptionKV(url):
     page = requests.get(
         url, headers={"User-Agent": headers[random.randint(0, 1000)].strip()})
-    print(page.content)
     soup = BeautifulSoup(page.content, "html.parser")
-    content = soup.find("p", class_="description-content")
-    return content.text
+    description = soup.find("p", class_="description-content").text
+    return description
 
 
 def queryAllKV():
@@ -33,6 +31,7 @@ def queryAllKV():
     page_number = 0
     full_data = []
     while True:
+        print(page_number)
         url = f"https://www.kv.ee/search?orderby=ob&deal_type=2&county=12&parish=1063&limit=100&start={page_number}"
         page = requests.get(
             url, headers={"User-Agent": headers[random.randint(0, 1000)].strip()})
@@ -73,7 +72,6 @@ def queryAllKV():
                 "permalink":  "https://www.kv.ee/" + e['data-object-id'],
                 "published": datetime.now().isoformat()
             }
-            print(obj["permalink"])
             full_data.append(obj)
 
         page_number += 100
@@ -83,10 +81,8 @@ def queryAllKV():
     print(len(full_data))
     json_object = json.dumps(full_data, indent=4)
 
-    os.remove("./scraped_data/korteridKV.json")
+    os.remove("./../scraped_data/korteridKV.json")
     time.sleep(1)
-    with open("./scraped_data/korteridKV.json", "w") as outfile:
+    with open("./../scraped_data/korteridKV.json", "w") as outfile:
         outfile.write(json_object)
-
-
-queryAllKV()
+    return full_data

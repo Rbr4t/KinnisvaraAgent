@@ -4,6 +4,7 @@ import json
 import random
 import time
 from urllib.parse import urlparse, urlunparse
+from bs4 import BeautifulSoup
 
 
 def remove_slug_from_url(url):
@@ -22,6 +23,12 @@ headers = headers_file.readlines()
 headers_file.close()
 
 url = "https://kinnisvara24.ee/search"
+
+url_dict = {}
+
+
+def getDescriptionKinnisvara(url):
+    return url_dict.get(url, None)
 
 
 def queryAllKinnisvara():
@@ -128,6 +135,8 @@ def queryAllKinnisvara():
                     "permalink": remove_slug_from_url(d["permalink"]),
                     "published": d["created_at"]
                 })
+                soup = BeautifulSoup(d["lisainfo"], "lxml")
+                url_dict[remove_slug_from_url(d["permalink"])] = soup.text
 
                 """
                 Format:
@@ -145,10 +154,8 @@ def queryAllKinnisvara():
     print(len(full_data))
     json_object = json.dumps(full_data, indent=4)
 
-    os.remove("./scraped_data/korteridKinnisvara.json")
+    os.remove("./../scraped_data/korteridKinnisvara.json")
     time.sleep(1)
-    with open("./scraped_data/korteridKinnisvara.json", "w") as outfile:
+    with open("./../scraped_data/korteridKinnisvara.json", "w") as outfile:
         outfile.write(json_object)
-
-
-queryAllKinnisvara()
+    return full_data
