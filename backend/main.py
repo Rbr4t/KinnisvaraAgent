@@ -26,48 +26,62 @@ def test():
     print(k)
 
 
+@app.get("/test3")
 def manageFlats():
-    pass
+    print(kinnisvara24.getDescriptionKinnisvara(
+        "https://kinnisvara24.ee/240755931"))
+    # print(compute_similarity(city24.getDescriptionCity(
+    #     "https://kinnisvara24.ee/240755931"), """Välja üürida avar(45, 2m²) rõdu ja parkimiskohaga möbleeritud kahetoaline korter. Väga heas seisukorras. Korter on värskelt korrastatud, uued tapeedid. Keldrikorrusel panipaik. Läheduses Maarjamõisa ja Ülikooli õppehooned, uus toidupood ja Lõunakeskus. Hea bussiühendus.
+    #     Helista julgesti ja küsi lisa!"""))
 
 
 def compute_similarity(input_string, reference_string):
-    # The ndiff method returns a list of strings representing the differences between the two input strings.
     diff = ndiff(input_string, reference_string)
     diff_count = 0
     for line in diff:
-        # a "-", indicating that it is a deleted character from the input string.
         if line.startswith("-"):
             diff_count += 1
-    # calculates the similarity by subtracting the ratio of the number of deleted characters to the length of the input string from 1
     return 1 - (diff_count / len(input_string))
 
 
-@app.get("/test2")
+@ app.get("/test2")
 def test2():
     descriptions = []
     kinnisvara = []
 
-    data1 = kinnisvara24.queryAllKinnisvara()
-    for d in data1:
-        descriptions += kinnisvara24.getDescriptionKinnisvara(d.permalink)
-        kinnisvara += d
-    print("33%")
+    # data1 = kinnisvara24.queryAllKinnisvara()
+    # for d in data1:
+    #     descriptions.append(
+    #         kinnisvara24.getDescriptionKinnisvara(d["permalink"]))
+    #     kinnisvara += d
+    # print("33%")
 
-    data2 = city24.queryAllCity()
-    for d in data2:
-        for desc in descriptions:
-            if compute_similarity(city24.getDescriptionCity(d.permalink), desc) > 0.8:
-                print(d.permalink)
-                break
-
-    print("66%")
+    # data2 = city24.queryAllCity()
+    # print(len(data2))
+    # i = 0
+    # for d in data2:
+    #     print(i)
+    #     if not city24.getDescriptionCity(d["permalink"]) in descriptions:
+    #         kinnisvara += d
+    #         descriptions.append(kinnisvara24.getDescriptionKinnisvara(
+    #             d["permalink"]))
+    #     print(i)
+    #     i += 1
+    # print("66%")
     data3 = kv.queryAllKV()
+
+    i = 0
+    for d in data3:
+        print(i)
+        if not kv.getDescriptionKV(d["permalink"]) in descriptions:
+            kinnisvara += d
+        i += 1
     print("99%")
 
-    return {"data": data1}
+    return kinnisvara
 
 
-@app.get("/add")
+@ app.get("/add")
 def add():
     from database import Session
 

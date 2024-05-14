@@ -18,7 +18,8 @@ def remove_slug_from_url(url):
     return new_url
 
 
-headers_file = open("user_agents.txt", "r")
+headers_file = open(
+    "/home/rbr4t/KinnisvaraAgent/backend/scrapers/user_agents.txt", "r")
 headers = headers_file.readlines()
 headers_file.close()
 
@@ -28,7 +29,11 @@ url_dict = {}
 
 
 def getDescriptionKinnisvara(url):
-    return url_dict.get(url, None)
+    res = None
+    with open("./url_dict.json", "r") as outfile:
+        data = json.load(outfile)
+        res = data.get(url, None)
+    return res
 
 
 def queryAllKinnisvara():
@@ -151,11 +156,13 @@ def queryAllKinnisvara():
         except json.decoder.JSONDecodeError:
             pass
 
+    json_object2 = json.dumps(url_dict, indent=4)
     print(len(full_data))
     json_object = json.dumps(full_data, indent=4)
 
-    os.remove("./../scraped_data/korteridKinnisvara.json")
-    time.sleep(1)
-    with open("./../scraped_data/korteridKinnisvara.json", "w") as outfile:
-        outfile.write(json_object)
+    with open("./url_dict.json", "w") as outfile:
+        outfile.write(json_object2)
+    # time.sleep(1)
+    # with open("/scraped_data/korteridKinnisvara.json", "w") as outfile:
+    #     outfile.write(json_object)
     return full_data

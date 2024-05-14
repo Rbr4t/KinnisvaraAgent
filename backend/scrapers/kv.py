@@ -8,7 +8,8 @@ from bs4 import BeautifulSoup
 from requests_html import HTMLSession
 from datetime import datetime
 
-headers_file = open("user_agents.txt", "r")
+headers_file = open(
+    "/home/rbr4t/KinnisvaraAgent/backend/scrapers/user_agents.txt", "r")
 headers = headers_file.readlines()
 headers_file.close()
 
@@ -18,10 +19,23 @@ flag = True
 
 
 def getDescriptionKV(url):
-    page = requests.get(
-        url, headers={"User-Agent": headers[random.randint(0, 1000)].strip()})
-    soup = BeautifulSoup(page.content, "html.parser")
-    description = soup.find("p", class_="description-content").text
+    errors = 0
+    while True:
+        page = requests.get(
+            url, headers={"User-Agent": headers[random.randint(0, 999)].strip()})
+        soup = BeautifulSoup(page.content, "html.parser")
+        print(page)
+        try:
+            description = soup.find("p", class_="description-content").text
+            break
+        except AttributeError as e:
+            time.sleep(1)
+            print(e)
+            errors += 1
+            if errors == 5:
+                return ""
+            pass
+        time.sleep(random.randint(1, 4))
     return description
 
 
@@ -79,10 +93,10 @@ def queryAllKV():
 
     session.close()
     print(len(full_data))
-    json_object = json.dumps(full_data, indent=4)
+    # json_object = json.dumps(full_data, indent=4)
 
-    os.remove("./../scraped_data/korteridKV.json")
-    time.sleep(1)
-    with open("./../scraped_data/korteridKV.json", "w") as outfile:
-        outfile.write(json_object)
+    # os.remove("./../scraped_data/korteridKV.json")
+    # time.sleep(1)
+    # with open("./../scraped_data/korteridKV.json", "w") as outfile:
+    #     outfile.write(json_object)
     return full_data

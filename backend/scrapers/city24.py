@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 
 # Accessing the API
 url = "https://api.city24.ee/et_EE/search/realties?address%5Bcc%5D=1&address%5Bcity%5D%5B%5D=20411&tsType=rent&unitType=Apartment&adReach=1&itemsPerPage=50&page=1"
-headers_file = open("user_agents.txt", "r")
+headers_file = open(
+    "/home/rbr4t/KinnisvaraAgent/backend/scrapers/user_agents.txt", "r")
 headers = headers_file.readlines()
 headers_file.close()
 
@@ -40,10 +41,10 @@ def queryAllCity():
         full_data.append(obj)
 
     print(len(full_data))
-    json_object = json.dumps(full_data, indent=4)
+    # json_object = json.dumps(full_data, indent=4)
 
-    os.remove("./../scraped_data/korteridCity.json")
-    time.sleep(1)
-    with open("./../scraped_data/korteridCity.json", "w") as outfile:
-        outfile.write(json_object)
+    # os.remove("./../scraped_data/korteridCity.json")
+    # time.sleep(1)
+    # with open("./../scraped_data/korteridCity.json", "w") as outfile:
+    #     outfile.write(json_object)
     return full_data
