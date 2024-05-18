@@ -5,6 +5,9 @@ import random
 import time
 from urllib.parse import urlparse, urlunparse
 from bs4 import BeautifulSoup
+from . import proxy
+
+proxy = proxy.getProxy()
 
 
 def remove_slug_from_url(url):
@@ -19,7 +22,7 @@ def remove_slug_from_url(url):
 
 
 headers_file = open(
-    "/home/rbr4t/KinnisvaraAgent/backend/scrapers/user_agents.txt", "r")
+    "./scrapers/user_agents.txt", "r")
 headers = headers_file.readlines()
 headers_file.close()
 
@@ -28,12 +31,8 @@ url = "https://kinnisvara24.ee/search"
 url_dict = {}
 
 
-def getDescriptionKinnisvara(url):
-    res = None
-    with open("./url_dict.json", "r") as outfile:
-        data = json.load(outfile)
-        res = data.get(url, None)
-    return res
+def getDescriptionKinnisvara(url, url_dict):
+    return url_dict.get(url, None)
 
 
 def queryAllKinnisvara():
@@ -89,7 +88,7 @@ def queryAllKinnisvara():
         "rooms_max": None,
         "rooms_min": None,
         "sewage_types": [],
-        "sort_by": "relevance",
+        "sort_by": "created_at",
         "sort_order": "desc",
         "page": 1,
         "utility_join_fees_paid": False,
@@ -122,7 +121,7 @@ def queryAllKinnisvara():
     full_data = []
     while RUN:
         z = requests.post(url, json=search_obj, headers={
-            "User-Agent": headers[random.randint(0, 1000)].strip(), "Accept": "application/json"})
+            "User-Agent": headers[random.randint(0, 1000)].strip(), "Accept": "application/json"}, proxies=proxy)
         print(search_obj["page"])
 
         try:
@@ -140,29 +139,17 @@ def queryAllKinnisvara():
                     "permalink": remove_slug_from_url(d["permalink"]),
                     "published": d["created_at"]
                 })
+
+                # Check if that permalink is already in the DB, if it is, then stop the search
+
                 soup = BeautifulSoup(d["lisainfo"], "lxml")
                 url_dict[remove_slug_from_url(d["permalink"])] = soup.text
 
-                """
-                Format:
-                    price
-                    area
-                    rooms
-                    submitted
-                    permalink
-                """
             search_obj["page"] += 1
 
         except json.decoder.JSONDecodeError:
             pass
 
-    json_object2 = json.dumps(url_dict, indent=4)
     print(len(full_data))
-    json_object = json.dumps(full_data, indent=4)
 
-    with open("./url_dict.json", "w") as outfile:
-        outfile.write(json_object2)
-    # time.sleep(1)
-    # with open("/scraped_data/korteridKinnisvara.json", "w") as outfile:
-    #     outfile.write(json_object)
-    return full_data
+    return full_data, url_dict

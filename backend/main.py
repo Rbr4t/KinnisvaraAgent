@@ -49,11 +49,13 @@ def test2():
     descriptions = []
     kinnisvara = []
 
-    # data1 = kinnisvara24.queryAllKinnisvara()
+    # req = kinnisvara24.queryAllKinnisvara()
+    # data1 = req[0]
+    # url_dict = req[1]
     # for d in data1:
     #     descriptions.append(
-    #         kinnisvara24.getDescriptionKinnisvara(d["permalink"]))
-    #     kinnisvara += d
+    #         kinnisvara24.getDescriptionKinnisvara(d["permalink"], url_dict))
+    #     kinnisvara.append(d)
     # print("33%")
 
     # data2 = city24.queryAllCity()
@@ -62,8 +64,8 @@ def test2():
     # for d in data2:
     #     print(i)
     #     if not city24.getDescriptionCity(d["permalink"]) in descriptions:
-    #         kinnisvara += d
-    #         descriptions.append(kinnisvara24.getDescriptionKinnisvara(
+    #         kinnisvara.append(d)
+    #         descriptions.append(city24.getDescriptionCity(
     #             d["permalink"]))
     #     print(i)
     #     i += 1
@@ -71,17 +73,19 @@ def test2():
     data3 = kv.queryAllKV()
 
     i = 0
+
     for d in data3:
         print(i)
         if not kv.getDescriptionKV(d["permalink"]) in descriptions:
-            kinnisvara += d
+            kinnisvara.append(d)
+
         i += 1
-    print("99%")
+    print("100%")
 
     return kinnisvara
 
 
-@ app.get("/add")
+@app.get("/add")
 def add():
     from database import Session
 
