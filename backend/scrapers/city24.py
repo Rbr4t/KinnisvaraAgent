@@ -17,17 +17,18 @@ proxy = proxy.getProxy()
 
 def getDescriptionCity(url):
     page = requests.get(
-        url, headers={"User-Agent": headers[random.randint(0, 1000)].strip()}, proxies=proxy)
+        url, headers={"User-Agent": headers[random.randint(0, 999)].strip()}, proxies=proxy)
     soup = BeautifulSoup(page.content, "html.parser")
     description = soup.find(
         "div", class_="object-description__description").text
     return description
 
 
-def queryAllCity():
+def queryRegularCity(permalinks):
     resp = requests.get(
-        url, headers={"User-Agent": headers[random.randint(0, 1000)].strip()}, proxies=proxy)
+        url, headers={"User-Agent": headers[random.randint(0, 999)].strip()}, proxies=proxy)
     full_data = []
+
     for d in resp.json():
         if d["booked"]:
             continue
@@ -42,6 +43,32 @@ def queryAllCity():
         }
 
         # Check if that permalink is already in the DB, if it is, then stop the search
+        if "https://www.city24.ee/real-estate/" + d["friendly_id"] in permalinks:
+            break
+
+        full_data.append(obj)
+
+    print(len(full_data))
+
+    return full_data
+
+
+def queryAllCity():
+    resp = requests.get(
+        url, headers={"User-Agent": headers[random.randint(0, 999)].strip()}, proxies=proxy)
+    full_data = []
+    for d in resp.json():
+        if d["booked"]:
+            continue
+
+        # More info can be extracted with more attributes
+        obj = {
+            "price": float(d["price"]),
+            "area": d["property_size"],
+            "rooms": d["room_count"],
+            "permalink": "https://www.city24.ee/real-estate/" + d["friendly_id"],
+            "published": d["date_published"]
+        }
 
         full_data.append(obj)
 
