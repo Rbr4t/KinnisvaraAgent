@@ -4,6 +4,10 @@ from models import Flat
 from datetime import datetime
 from scrapers import kinnisvara24, kv, city24
 import json
+from pydantic import BaseModel
+from difflib import ndiff
+
+
 API = APIRouter()
 
 API.get("/")
@@ -114,8 +118,56 @@ def query_all():
     with Session() as session:
         for data in kinnisvara:
             flat = Flat(rooms=data["rooms"], price=data["price"], area=data["area"],
-                        permalink=data["permalink"], published=datetime.fromisoformat(data["published"]))
+                        permalink=data["permalink"], published=datetime.fromisoformat(data["published"].replace("Z", "")))
             session.add(flat)
         session.commit()
 
     return {"status": 200}
+
+
+class Params(BaseModel):
+    rooms: int
+    area: float
+    price: float
+
+
+def compute_similarity(input_string, reference_strings):
+    similarity = [0]
+    for reference_string in reference_strings:
+        diff = ndiff(input_string, reference_string)
+        diff_count = 0
+        for line in diff:
+            if line.startswith("-"):
+                diff_count += 1
+        similarity.append(1 - (diff_count / len(input_string)))
+    return max(similarity)
+
+
+@API.post("/get_flats")
+def get_flats(model: Params):
+    # return model
+    with Session() as session:
+        res = session.query(Flat).filter(Flat.area >= model.area,
+                                         Flat.rooms >= model.rooms, Flat.price <= model.price).all()
+
+        # Get all the descriptions of flats
+        descriptions = []
+
+        flats = []
+
+        for o in res:
+            if "kv" in o.permalink:
+                if compute_similarity(kv.getDescriptionKV(o.permalink), descriptions) < 0.7:
+                    flats.append(o)
+                    descriptions.append(kv.getDescriptionKV(o.permalink))
+            elif "city24" in o.permalink:
+                if compute_similarity(city24.getDescriptionCity(o.permalink), descriptions) < 0.7:
+                    flats.append(o)
+                descriptions.append(city24.getDescriptionCity(o.permalink))
+
+            elif "kinnisvara24" in o.permalink:
+                if compute_similarity(kinnisvara24.getDescriptionKinnisvara(o.permalink), descriptions) < 0.7:
+                    flats.append(o)
+                    descriptions.append(
+                        kinnisvara24.getDescriptionKinnisvara(o.permalink))
+        return {"flats": flats}
