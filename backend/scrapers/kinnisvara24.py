@@ -40,10 +40,6 @@ def queryRegularKinnisvara(permalinks):
     search_obj = {
         "hash": None,
         "addresses": [
-            {
-                "A1": "Tartu maakond",
-                "A2": "Tartu linn",
-            },
         ],
         "area_min": None,
         "area_max": None,
@@ -130,13 +126,14 @@ def queryRegularKinnisvara(permalinks):
             for d in z.json()["data"]:
                 if d["disabled_text"]:
                     continue
-                # More info can be extracted with more attributes
                 # Check if that permalink is already in the DB, if it is, then stop the search
                 if remove_slug_from_url(d["permalink"]) in permalinks:
                     RUN = False
                     break
 
+                # More info can be extracted with more attributes
                 full_data.append({
+                    "address": d["address"],
                     "price": d["hind"],
                     "area": float(d["area"]),
                     "rooms": d["rooms"],
@@ -161,12 +158,7 @@ def queryAllKinnisvara():
     RUN = True
     search_obj = {
         "hash": None,
-        "addresses": [
-            {
-                "A1": "Tartu maakond",
-                "A2": "Tartu linn",
-            },
-        ],
+        "addresses": [],
         "area_min": None,
         "area_max": None,
         "land_area_min": None,
@@ -255,8 +247,9 @@ def queryAllKinnisvara():
                 # More info can be extracted with more attributes
 
                 full_data.append({
+                    "address": d["address"],
                     "price": d["hind"],
-                    "area": float(d["area"]),
+                    "area": float(d["area"]) if d.get("area") is not None else None,
                     "rooms": d["rooms"],
                     "permalink": remove_slug_from_url(d["permalink"]),
                     "published": d["created_at"]

@@ -18,3 +18,8 @@ app.include_router(API, prefix='/api')
 @app.get("/")
 def read_root():
     return {"status": 200}
+
+
+@app.get("/test")
+def test():
+    return kv.queryAllKV()
