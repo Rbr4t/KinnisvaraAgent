@@ -12,3 +12,12 @@ class Flat(Base):
     area = Column(Float, nullable=False)
     permalink = Column(String(50), nullable=False)
     published = Column(DateTime, default=datetime.utcnow())
+
+
+class Search(Base):
+    __tablename__ = 'user_searches'
+    id = Column(Integer, primary_key=True)
+    location = Column(String(250), nullable=False)
+    price = Column(Float)
+    area = Column(Float)
+    rooms = Column(Integer, default=0)

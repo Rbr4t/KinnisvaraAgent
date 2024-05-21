@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 from database import Session
-from models import Flat
+from models import Flat, Search
 from datetime import datetime
 from scrapers import kinnisvara24, kv, city24
 import json
 from pydantic import BaseModel
 from difflib import ndiff
-
+from typing import Optional
 
 API = APIRouter()
 
@@ -125,7 +125,7 @@ def query_all():
     return {"status": 200}
 
 
-class Params(BaseModel):
+class ParamsFlats(BaseModel):
     rooms: int
     area: float
     price: float
@@ -144,7 +144,7 @@ def compute_similarity(input_string, reference_strings):
 
 
 @API.post("/get_flats")
-def get_flats(model: Params):
+def get_flats(model: ParamsFlats):
     # return model
     with Session() as session:
         res = session.query(Flat).filter(Flat.area >= model.area,
@@ -171,3 +171,20 @@ def get_flats(model: Params):
                     descriptions.append(
                         kinnisvara24.getDescriptionKinnisvara(o.permalink))
         return {"flats": flats}
+
+
+class ParamsSearch(BaseModel):
+    location: str
+    rooms: Optional[int] = None
+    area: Optional[float] = None
+    price: Optional[float] = None
+
+
+@API.post("/add_search")
+def add_search(obj: ParamsSearch):
+    with Session() as session:
+        search = Search(location=obj.location, price=obj.price,
+                        area=obj.area, rooms=obj.rooms)
+        session.add(search)
+        session.commit()
+    return obj
