@@ -82,16 +82,9 @@ def query_all():
     descriptions = []
     kinnisvara = []
 
-    req = kinnisvara24.queryAllKinnisvara()
-    data1 = req[0]
-    url_dict = req[1]
-    for d in data1:
-        descriptions.append(
-            kinnisvara24.getDescriptionKinnisvara(d["permalink"], url_dict))
-        kinnisvara.append(d)
-    print("33%")
+    i += 1
 
-    data2 = city24.queryAllCity()
+    data2 = city24.query(descriptions)
     print(len(data2))
     i = 0
     for d in data2:
@@ -103,16 +96,24 @@ def query_all():
         print(i)
         i += 1
     print("66%")
-    data3 = kv.queryAllKV()
+
+    req = kinnisvara24.query(descriptions)
+    data1 = req[0]
+    url_dict = req[1]
+    for d in data1:
+        descriptions.append(
+            kinnisvara24.getDescriptionKinnisvara(d["permalink"], url_dict))
+        kinnisvara.append(d)
+    print("33%")
 
     i = 0
+    data3 = kv.query()
 
     for d in data3:
         print(i)
         if not kv.getDescriptionKV(d["permalink"]) in descriptions:
             kinnisvara.append(d)
 
-        i += 1
     print("100%")
 
     with Session() as session:

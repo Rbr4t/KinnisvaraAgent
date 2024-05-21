@@ -22,4 +22,4 @@ def read_root():
 
 @app.get("/test")
 def test():
-    return kv.queryAllKV()
+    return kv.query()
