@@ -5,6 +5,8 @@ import random
 import re
 from bs4 import BeautifulSoup
 from . import proxy
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 
 proxy = proxy.getProxy()
 
@@ -53,8 +55,13 @@ def query(permalinks=[]):
         if len(resp.json()) == 0:
             RUN = False
         for d in resp.json():
+
             if d["booked"]:
                 continue
+            if datetime.fromisoformat(d["date_published"].replace("Z", "")).date() < (date.today() - relativedelta(months=1)):
+
+                RUN = False
+                break
 
             # Check if that permalink is already in the DB, if it is, then stop the search
             if "https://www.city24.ee/real-estate/" + d["friendly_id"] in permalinks:
@@ -62,7 +69,7 @@ def query(permalinks=[]):
 
             # More info can be extracted with more attributes
             obj = {
-                "address": d["address"],
+                "address": f"{d['address']['county_name']}, {d['address']['parish_name']}, {d['address']['city_name']}, {d['address']['district_name']}, {d['address']['street_name']}, {d['address']['house_number']}".replace(", None", ""),
                 "price": float(d["price"]) if d.get("price") is not None else None,
                 "area": d["property_size"],
                 "rooms": d["room_count"],

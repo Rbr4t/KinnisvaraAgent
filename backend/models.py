@@ -8,10 +8,11 @@ class Flat(Base):
 
     id = Column(Integer, primary_key=True)
     rooms = Column(Integer, default=None)
-    price = Column(Float, nullable=False)
-    area = Column(Float, nullable=False)
+    price = Column(Float)
+    area = Column(Float)
     permalink = Column(String(50), nullable=False)
     published = Column(DateTime, default=datetime.utcnow())
+    location = Column(String(250))
 
 
 class Search(Base):

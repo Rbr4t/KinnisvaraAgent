@@ -6,6 +6,8 @@ import time
 from urllib.parse import urlparse, urlunparse
 from bs4 import BeautifulSoup
 from . import proxy
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 
 proxy = proxy.getProxy()
 
@@ -32,7 +34,7 @@ url_dict = {}
 
 
 def getDescriptionKinnisvara(url, url_dict):
-    return url_dict.get(url, None)
+    return url_dict.get(url, "")
 
 
 def query(permalinks=[]):
@@ -124,15 +126,21 @@ def query(permalinks=[]):
                 RUN = False
             for d in z.json()["data"]:
                 if remove_slug_from_url(d["permalink"]) in permalinks:
-                    RUN = False
-                    break
+                    continue
 
                 if d["disabled_text"]:
                     continue
-                # More info can be extracted with more attributes
+                if datetime.fromisoformat(d["created_at"].replace("Z", "")).date() < (date.today() - relativedelta(months=1)):
+
+                    RUN = False
+                    break
+
+                if d["hind"] < 100:
+                    continue
+                    # More info can be extracted with more attributes
 
                 full_data.append({
-                    "address": d["address"],
+                    "address": f"{d['address']['A1']}, {d['address']['A2']}, {d['address']['A3']}, {d['address']['A4']}, {d['address']['A5']}, {d['address']['A6']}, {d['address']['A7']}, {d['address']['A8']}".replace(", ,", ",").replace(", None", ""),
                     "price": d["hind"],
                     "area": float(d["area"]) if d.get("area") is not None else None,
                     "rooms": d["rooms"],
@@ -147,6 +155,9 @@ def query(permalinks=[]):
 
         except json.decoder.JSONDecodeError:
             pass
+
+    with open("url_dicts.json", "w") as file:
+        file.write(json.dumps(url_dict))
 
     print(len(full_data))
 
