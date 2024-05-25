@@ -65,7 +65,7 @@ def query(permalinks=[]):
 
             # Check if that permalink is already in the DB, if it is, then stop the search
             if "https://www.city24.ee/real-estate/" + d["friendly_id"] in permalinks:
-                break
+                continue
 
             # More info can be extracted with more attributes
             obj = {

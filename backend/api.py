@@ -10,6 +10,10 @@ from typing import Optional
 from thefuzz import fuzz
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
+from curl_cffi import requests
+import random
+from scrapers import proxy
+
 
 API = APIRouter()
 
@@ -18,6 +22,36 @@ API.get("/")
 
 def index():
     return {"status": 200}
+
+
+def check_all_entries():
+    headers_file = open(
+        "./scrapers/user_agents.txt", "r")
+
+    headers = headers_file.readlines()
+    headers_file.close()
+
+    proxy = proxy.getProxy()
+
+    removed_flats = 0
+    with Session() as session:
+        flats = session.query(Flat).all()
+
+        for flat in flats:
+            errors = 0
+            try:
+                resp = requests.get(flat.permalink, headers={
+                                    "User-Agent": headers[random.randint(0, 999)].strip()}, impersonate="safari", proxies=proxy)
+                if resp.status_code != 200:
+                    session.query(Flat).filter(Flat.id == flat.id).delete()
+                    removed_flats += 1
+
+            except Exception:
+                errors += 1
+                if errors > 10:
+                    session.query(Flat).filter(Flat.id == flat.id).delete()
+                pass
+    return {"removed_flats": removed_flats}
 
 
 @API.get("/regular_query")

@@ -15,11 +15,6 @@ headers_file = open(
 headers = headers_file.readlines()
 headers_file.close()
 
-flag = True
-
-# This is how I'm going to extract more info for future development, that search url is going to give me all the necessary links
-
-
 proxy = proxy.getProxy()
 
 
