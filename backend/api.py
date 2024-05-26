@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Query
 from database import Session
 from models import Flat, Search
 from datetime import datetime
@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 from curl_cffi import requests
 import random
 from scrapers import proxy
-
+from auth import userinfo
 
 API = APIRouter()
 
@@ -181,6 +181,7 @@ def regular_query():
 
 
 class ParamsFlats(BaseModel):
+    token: str
     location: str
     rooms: Optional[int] = 0
     area: Optional[float] = 0.0
@@ -261,13 +262,28 @@ def get_flats(model: ParamsFlats):
         return {"flats": flats}
 
 
-@ API.post("/add_search")
+@API.post("/add_search")
 def add_search(obj: ParamsFlats):
+
+    id = userinfo(obj.token)["id"]
 
     with Session() as session:
         search = Search(location=obj.location, price=obj.price,
-                        area=obj.area, rooms=obj.rooms)
+                        area=obj.area, rooms=obj.rooms, user_id=id)
         session.add(search)
         session.commit()
     resp = get_flats(obj)
     return resp
+
+
+class Param(BaseModel):
+    token: str
+
+
+@API.post("/get_searches")
+async def get_searches(obj: Param):
+    id = userinfo(obj.token)["id"]
+    with Session() as session:
+        resp = session.query(Search).filter(Search.user_id == id).all()
+
+    return {"searches": resp}

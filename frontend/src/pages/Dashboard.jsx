@@ -24,7 +24,7 @@ import FormLabel from "@mui/material/FormLabel";
 import Tooltip from "@mui/material/Tooltip";
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMoreRounded";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Select from "../components/Dropdown";
 import data from "../assets/output.json";
 
@@ -38,14 +38,11 @@ async function isLoggedIn() {
     },
   });
 
-  console.log("here!");
-  console.log(response);
-
-  if (response.ok) {
-    return true;
-  } else {
+  if (!response.ok) {
     return false;
   }
+
+  return true;
 }
 
 export default function Dashboard() {
@@ -71,12 +68,12 @@ export default function Dashboard() {
       },
     ]);
     console.log({
-      location,
-      price,
-      area,
-      rooms,
-      lisaParameetrid,
-      date: new Date().getDate(),
+      price: parseFloat(price),
+      area: parseFloat(area),
+      rooms: parseInt(rooms),
+      date: new Date().toLocaleString(),
+      token: sessionStorage.getItem("access_token"),
+      location: location,
     });
     setLocation("");
     setPrice("");
@@ -87,7 +84,70 @@ export default function Dashboard() {
       uued: false,
       varieerumine: false,
     });
+    console.log(
+      JSON.stringify({
+        price: parseFloat(price),
+        area: parseFloat(area),
+        rooms: parseInt(rooms),
+        date: new Date().toLocaleString(),
+        token: sessionStorage.getItem("access_token"),
+        location: location,
+      })
+    );
+    const sendReq = async () => {
+      const response = await fetch("/api/add_search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          price: parseFloat(price),
+          area: parseFloat(area),
+          rooms: parseInt(rooms),
+          token: sessionStorage.getItem("access_token"),
+          location: location,
+        }),
+      });
+      if (response.ok) {
+        return true;
+      } else {
+        return false;
+      }
+    };
+    sendReq();
   };
+
+  useEffect(() => {
+    const reqQueries = async () => {
+      const token = sessionStorage.getItem("access_token");
+      console.log(JSON.stringify({ token }));
+
+      try {
+        const resp = await fetch("/api/get_searches", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        console.log(resp.status);
+
+        if (!resp.ok) {
+          throw new Error(`HTTP error! status: ${resp.status}`);
+        }
+
+        const userData = await resp.json();
+        setQueries(userData.searches);
+      } catch (error) {
+        console.error("There was an error!", error);
+      }
+    };
+
+    reqQueries();
+  }, []); // The empty array ensures this effect runs only once
+
   const [selectedAddress, setSelectedAddress] = useState([]);
 
   const handleSelectChange = (index, value) => {
@@ -245,9 +305,9 @@ export default function Dashboard() {
                     </AccordionSummary>
                     <AccordionDetails>
                       <List>
-                        <ListItem>Price: {query.price}</ListItem>
-                        <ListItem>Area: {query.area}</ListItem>
-                        <ListItem>Rooms: {query.rooms}</ListItem>
+                        <ListItem>Max Hind: {query.price}</ListItem>
+                        <ListItem>Pindala: {query.area}</ListItem>
+                        <ListItem>Ruume: {query.rooms}</ListItem>
                       </List>
                     </AccordionDetails>
                     <AccordionActions>
