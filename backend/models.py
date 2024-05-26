@@ -1,5 +1,6 @@
 from database import Base
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 
 
@@ -22,3 +23,24 @@ class Search(Base):
     price = Column(Float)
     area = Column(Float)
     rooms = Column(Integer, default=0)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nimi = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True)
+    hashed_parool = Column(String, nullable=False)
+
+    piletid = relationship("Search", backref="users")
+
+
+class User_Flats(Base):
+    __tablename__ = "users_flats"
+
+    id = Column(Integer, primary_key=True)
+    flat_id = Column(Integer, ForeignKey('flat.id'))
+    user_id = Column(Integer, ForeignKey('users.id'))

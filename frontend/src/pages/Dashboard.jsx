@@ -30,6 +30,24 @@ import data from "../assets/output.json";
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } };
 
+async function isLoggedIn() {
+  const response = await fetch("/auth/get_user_info", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${sessionStorage.getItem("access_token")}`,
+    },
+  });
+
+  console.log("here!");
+  console.log(response);
+
+  if (response.ok) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 export default function Dashboard() {
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
@@ -40,7 +58,6 @@ export default function Dashboard() {
     varieerumine: false,
   });
   const [queries, setQueries] = useState([]);
-  <Checkbox {...label} />;
   const handleAddQuery = () => {
     setQueries([
       ...queries,
@@ -84,6 +101,14 @@ export default function Dashboard() {
     setLocation(newSelectedAddress.join(", "));
     setSelectedAddress(newSelectedAddress);
   };
+
+  async function checkLogin() {
+    if (!(await isLoggedIn())) {
+      window.location.href = "/login";
+      return <></>;
+    }
+  }
+  checkLogin();
 
   return (
     <>
@@ -231,6 +256,36 @@ export default function Dashboard() {
                     </AccordionActions>
                   </Accordion>
                 ))}
+              </List>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={12}>
+            <Paper elevation={3} sx={{ padding: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Leitud korterid
+              </Typography>
+              <List>
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                  >
+                    {}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <List>
+                      <ListItem>Price: {}</ListItem>
+                      <ListItem>Area: {}</ListItem>
+                      <ListItem>Rooms: {}</ListItem>
+                    </List>
+                  </AccordionDetails>
+                  <AccordionActions>
+                    Aktiivne {} saadik
+                    <Switch>Active/not</Switch>
+                  </AccordionActions>
+                </Accordion>
               </List>
             </Paper>
           </Grid>

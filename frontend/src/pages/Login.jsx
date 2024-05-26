@@ -13,6 +13,7 @@ import {
   Alert,
 } from "@mui/material";
 import { useState } from "react";
+import Navbar from "../components/Navbar";
 
 const defaultTheme = createTheme();
 
@@ -40,7 +41,7 @@ export default function SignIn() {
           const responseData = await response.json();
           sessionStorage.setItem("access_token", responseData.access_token);
           setFail(false);
-          window.location.href = "/";
+          window.location.href = "/dashboard";
         } else {
           setFail(true);
           throw new Error("Network response was not ok");
@@ -55,6 +56,8 @@ export default function SignIn() {
 
   return (
     <ThemeProvider theme={defaultTheme}>
+      <Navbar />
+
       <Container component="main" maxWidth="xs">
         <CssBaseline />
         <Box

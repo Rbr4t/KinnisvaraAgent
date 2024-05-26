@@ -56,7 +56,12 @@ const HeroSection = () => {
       <Typography variant="h6" component="p" gutterBottom>
         Ta aitab sul leida kõige sobivama korteri sinu nõudmiste järgi.
       </Typography>
-      <Button variant="contained" color="primary" size="large">
+      <Button
+        variant="contained"
+        color="primary"
+        size="large"
+        href="/dashboard"
+      >
         Alusta
       </Button>
     </Box>

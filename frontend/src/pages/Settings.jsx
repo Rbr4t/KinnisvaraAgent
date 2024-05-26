@@ -66,21 +66,9 @@ export default function Settings() {
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ padding: 2 }}>
               <Typography variant="h6" gutterBottom>
-                Settings
+                Seaded
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel id="intensity-label">Check Intensity</InputLabel>
-                  <Select
-                    labelId="intensity-label"
-                    value={intensity}
-                    onChange={handleIntensityChange}
-                  >
-                    <MenuItem value="low">Low</MenuItem>
-                    <MenuItem value="medium">Medium</MenuItem>
-                    <MenuItem value="high">High</MenuItem>
-                  </Select>
-                </FormControl>
                 <TextField
                   label="Email"
                   value={email}
@@ -94,21 +82,14 @@ export default function Settings() {
                   fullWidth
                 />
                 <Button variant="contained" onClick={handleAddMoney}>
-                  Add Money
+                  Lisa raha
                 </Button>
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleSave}
                 >
-                  Save
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={handleLogout}
-                >
-                  Log Out
+                  Salvesta
                 </Button>
               </Box>
             </Paper>
