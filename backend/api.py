@@ -205,7 +205,10 @@ def get_flats(model: ParamsFlats):
     url_dict = regular_query()["url_dict"]
 
     with Session() as session:
-        if model.rooms is None and model.area is None:
+        if model.rooms is None and model.area is None and model.price is None:
+            res = session.query(Flat).filter(
+                Flat.published > (date.today() - relativedelta(months=1)), Flat.location.like('%'.join(model.location.split(', '))+"%")).all()
+        elif model.rooms is None and model.area is None:
             res = session.query(Flat).filter(
                 Flat.price <= model.price, Flat.published > (date.today() - relativedelta(months=1)), Flat.location.like('%'.join(model.location.split(', '))+"%")).all()
         elif model.rooms is None:

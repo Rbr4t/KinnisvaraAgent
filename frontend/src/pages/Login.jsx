@@ -112,8 +112,8 @@ export default function SignIn() {
             </Button>
             <Grid container>
               <Grid item>
-                <Link href="/registreeri" variant="body2">
-                  {"Puudub kasutaja? Registreeri"}
+                <Link href="/register" variant="body2">
+                  Puudub kasutaja? Registreeri
                 </Link>
               </Grid>
             </Grid>
