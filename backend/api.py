@@ -1,14 +1,13 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from database import Session
-from models import Flat, Search
-from datetime import datetime
+from models import Flat, Search, User_Flats
+from datetime import datetime, date
 from scrapers import kinnisvara24, kv, city24
 import json
 from pydantic import BaseModel
 from difflib import ndiff
 from typing import Optional
 from thefuzz import fuzz
-from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from curl_cffi import requests
 import random
@@ -54,140 +53,6 @@ def check_all_entries():
     return {"removed_flats": removed_flats}
 
 
-@API.get("/regular_query")
-def regular_query():
-    descriptions = []
-    kinnisvara = []
-
-    with Session() as session:
-        permalinks = session.query(Flat).all()
-        searches_db = session.query(Search).all()
-
-    permalinks = [p.permalink for p in permalinks]
-    searches = set([p.location for p in searches_db])
-    print(searches)
-    max_price = max(filter(lambda x: x is not None,
-                    [p.price for p in searches_db])) + 100
-    min_area = min(filter(lambda x: x is not None,
-                   [p.area for p in searches_db])) - 5
-
-    print(permalinks)
-
-    req = kinnisvara24.query(permalinks)
-    data1 = req[0]
-    url_dict = req[1]
-    for d in data1:
-        for x in searches:
-            if x.split(", ")[0] not in d["address"]:
-                continue
-            elif x.split(", ")[1] not in d["address"]:
-                continue
-            elif fuzz.ratio(x, d["address"]) < 60:
-                continue
-            elif None in [d["area"], d["price"]]:
-                pass
-            elif d in kinnisvara:
-                continue
-            elif d["area"] < min_area:
-                continue
-            elif d["price"] > max_price:
-                continue
-            elif d["permalink"] in permalinks:
-                continue
-            descriptions.append(
-                kinnisvara24.getDescriptionKinnisvara(d["permalink"], url_dict))
-            kinnisvara.append(d)
-    print(len(kinnisvara))
-    print("33%")
-
-    data2 = city24.query(permalinks)
-    print(len(data2))
-    i = 0
-    for d in data2:
-        for x in searches:
-            if x.split(", ")[0] not in d["address"]:
-                continue
-            elif x.split(", ")[1] not in d["address"]:
-                continue
-            elif fuzz.ratio(x, d["address"]) < 60:
-                continue
-            elif d in kinnisvara:
-                continue
-            elif None in [d["area"], d["price"]]:
-                pass
-            elif d["area"] < min_area:
-                continue
-            elif d["price"] > max_price:
-                continue
-            elif d["permalink"] in permalinks:
-                continue
-            elif not city24.getDescriptionCity(d["permalink"]) in descriptions:
-                kinnisvara.append(d)
-                descriptions.append(city24.getDescriptionCity(
-                    d["permalink"]))
-            print(i)
-        i += 1
-    print(len(kinnisvara))
-    print("66%")
-    data3 = kv.query(permalinks)
-
-    i = 0
-
-    for d in data3:
-        print(i)
-        for x in searches:
-            if x.split(", ")[0] not in d["address"]:
-                continue
-            elif x.split(", ")[1] not in d["address"]:
-                continue
-            elif fuzz.ratio(x, d["address"]) < 60:
-                continue
-            elif d in kinnisvara:
-                continue
-            elif None in [d["area"], d["price"]]:
-                pass
-            elif d["area"] < min_area:
-                continue
-            elif d["price"] > max_price:
-                continue
-            elif d["permalink"] in permalinks:
-                continue
-            elif not kv.getDescriptionKV(d["permalink"]) in descriptions:
-                kinnisvara.append(d)
-
-        i += 1
-    print(len(kinnisvara))
-
-    print("100%")
-
-    with open("output3.json", "w") as outfile:
-        outfile.write(json.dumps(kinnisvara, indent=4))
-
-    with Session() as session:
-        for data in kinnisvara:
-
-            if "kv.ee" in data["permalink"]:
-
-                flat = Flat(rooms=data["rooms"], price=data["price"], area=data["area"],
-                            permalink=data["permalink"], published=datetime.fromisoformat(data["published"].rsplit(".", 1)[0]), location=data["address"])
-            else:
-                flat = Flat(rooms=data["rooms"], price=data["price"], area=data["area"],
-                            permalink=data["permalink"], published=datetime.fromisoformat(data["published"].replace("Z", "")), location=data["address"])
-
-            session.add(flat)
-        session.commit()
-
-    return {"status": 200, "url_dict": url_dict}
-
-
-class ParamsFlats(BaseModel):
-    token: str
-    location: str
-    rooms: Optional[int] = 0
-    area: Optional[float] = 0.0
-    price: Optional[float] = 0.0
-
-
 def compute_similarity(input_string, reference_strings):
     similarity = [0]
     for reference_string in reference_strings:
@@ -201,9 +66,7 @@ def compute_similarity(input_string, reference_strings):
     return max(similarity)
 
 
-@API.post("/get_flats")
-def get_flats(model: ParamsFlats):
-    url_dict = regular_query()["url_dict"]
+def get_flats(model, url_dict):
 
     with Session() as session:
         if model.rooms is None and model.area is None and model.price is None:
@@ -238,9 +101,9 @@ def get_flats(model: ParamsFlats):
         res.sort(key=lambda r: r.published, reverse=True)
 
         for i, o in enumerate(res):
-            if len(flats) == 20:
+            if len(flats) == 5:
                 break
-            print(str(round(len(flats)/len(res), 2)*100) + "%")
+
             if "kv" in o.permalink:
                 description = kv.getDescriptionKV(o.permalink)
                 if compute_similarity(description, [*descriptions["city24"], *descriptions["kinnisvara24"]]) < 0.7:
@@ -262,8 +125,171 @@ def get_flats(model: ParamsFlats):
         return {"flats": flats}
 
 
+async def regular_query():
+    descriptions = []
+    kinnisvara = []
+
+    with Session() as session:
+        permalinks = session.query(Flat).all()
+        searches_db = session.query(Search).all()
+    if len(searches_db) == 0:
+        return {"status": 200}
+    permalinks = [p.permalink for p in permalinks]
+    searches = set([p.location for p in searches_db])
+    max_price = max(filter(lambda x: x is not None,
+                    [p.price for p in searches_db])) + 100
+    min_area = min(filter(lambda x: x is not None,
+                   [p.area for p in searches_db])) - 5
+
+    req = kinnisvara24.query(permalinks)
+    data1 = req[0]
+    url_dict = req[1]
+    for d in data1:
+        for x in searches:
+            if x.split(", ")[0] not in d["address"]:
+                continue
+            elif x.split(", ")[1] not in d["address"]:
+                continue
+            elif fuzz.ratio(x, d["address"]) < 60:
+                continue
+            elif None in [d["area"], d["price"]]:
+                pass
+            elif d in kinnisvara:
+                continue
+            elif d["area"] <= min_area:
+                continue
+            elif d["price"] >= max_price:
+                continue
+            elif d["permalink"] in permalinks:
+                continue
+            descriptions.append(
+                kinnisvara24.getDescriptionKinnisvara(d["permalink"], url_dict))
+            kinnisvara.append(d)
+    print(len(kinnisvara))
+    print("33%")
+
+    data2 = city24.query(permalinks)
+    print(len(data2))
+    i = 0
+    for d in data2:
+        for x in searches:
+            if x.split(", ")[0] not in d["address"]:
+                continue
+            elif x.split(", ")[1] not in d["address"]:
+                continue
+            elif fuzz.ratio(x, d["address"]) < 60:
+                continue
+            elif d in kinnisvara:
+                continue
+            elif None in [d["area"], d["price"]]:
+                pass
+            elif d["area"] <= min_area:
+                continue
+            elif d["price"] >= max_price:
+                continue
+            elif d["permalink"] in permalinks:
+                continue
+            elif not city24.getDescriptionCity(d["permalink"]) in descriptions:
+                kinnisvara.append(d)
+                descriptions.append(city24.getDescriptionCity(
+                    d["permalink"]))
+            print(i)
+        i += 1
+    print(len(kinnisvara))
+    print("66%")
+    data3 = kv.query(permalinks)
+
+    i = 0
+
+    for d in data3:
+        print(i)
+        for x in searches:
+            if x.split(", ")[0] not in d["address"]:
+                continue
+            elif x.split(", ")[1] not in d["address"]:
+                continue
+            elif fuzz.ratio(x, d["address"]) < 60:
+                continue
+            elif d in kinnisvara:
+                continue
+            elif None in [d["area"], d["price"]]:
+                pass
+            elif d["area"] <= min_area:
+                continue
+            elif d["price"] >= max_price:
+                continue
+            elif d["permalink"] in permalinks:
+                continue
+            elif not kv.getDescriptionKV(d["permalink"]) in descriptions:
+                kinnisvara.append(d)
+
+        i += 1
+    print(len(kinnisvara))
+
+    print("100%")
+
+    with open("output3.json", "w") as outfile:
+        outfile.write(json.dumps(kinnisvara, indent=4))
+
+    with Session() as session:
+        session.query(User_Flats).delete()
+        for data in kinnisvara:
+
+            if "kv.ee" in data["permalink"]:
+
+                flat = Flat(rooms=data["rooms"], price=data["price"], area=data["area"],
+                            permalink=data["permalink"], published=datetime.fromisoformat(data["published"].rsplit(".", 1)[0]), location=data["address"])
+            else:
+                flat = Flat(rooms=data["rooms"], price=data["price"], area=data["area"],
+                            permalink=data["permalink"], published=datetime.fromisoformat(data["published"].replace("Z", "")), location=data["address"])
+
+            session.add(flat)
+        session.commit()
+
+    # Get the searches and make querys for these searches
+    # location - user_ids
+
+    for model in searches_db:
+
+        with Session() as session:
+
+            flats = get_flats(model, url_dict)["flats"]
+            # add flats to db
+            for flat in flats:
+                print(flat)
+                obj = User_Flats(flat_id=flat.id, user_id=model.user_id)
+                session.add(obj)
+            session.commit()
+    return {"status": 200}
+
+
+class ParamsFlats(BaseModel):
+    token: str
+    location: str
+    rooms: Optional[int] = 0
+    area: Optional[float] = 0.0
+    price: Optional[float] = 0.0
+
+
+class TokenModel(BaseModel):
+    token: str
+
+
+@API.post("/get_flats")
+def get_id_flats(token: TokenModel):
+    id = userinfo(token.token)["id"]
+
+    flats = []
+    with Session() as session:
+        ids = session.query(User_Flats).filter(User_Flats.user_id == id).all()
+        for x in ids:
+            flat = session.query(Flat).filter(Flat.id == x.id).first()
+            flats.append(flat)
+    return {"flats": flats}
+
+
 @API.post("/add_search")
-def add_search(obj: ParamsFlats):
+def add_search(obj: ParamsFlats, background_tasks: BackgroundTasks):
 
     id = userinfo(obj.token)["id"]
 
@@ -272,15 +298,15 @@ def add_search(obj: ParamsFlats):
                         area=obj.area, rooms=obj.rooms, user_id=id)
         session.add(search)
         session.commit()
-    resp = get_flats(obj)
-    return resp
+    background_tasks.add_task(regular_query)
+    return {"status": 200}
 
 
 class Param(BaseModel):
     token: str
 
 
-@API.post("/get_searches")
+@ API.post("/get_searches")
 async def get_searches(obj: Param):
     id = userinfo(obj.token)["id"]
     with Session() as session:

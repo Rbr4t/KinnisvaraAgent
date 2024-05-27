@@ -16,6 +16,7 @@ import {
   AccordionDetails,
   AccordionActions,
   Checkbox,
+  Link,
 } from "@mui/material";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -55,6 +56,7 @@ export default function Dashboard() {
     varieerumine: false,
   });
   const [queries, setQueries] = useState([]);
+  const [results, setResults] = useState([]);
   const handleAddQuery = () => {
     setQueries([
       ...queries,
@@ -121,7 +123,6 @@ export default function Dashboard() {
   useEffect(() => {
     const reqQueries = async () => {
       const token = sessionStorage.getItem("access_token");
-      console.log(JSON.stringify({ token }));
 
       try {
         const resp = await fetch("/api/get_searches", {
@@ -144,8 +145,33 @@ export default function Dashboard() {
         console.error("There was an error!", error);
       }
     };
+    const reqSearches = async () => {
+      const token = sessionStorage.getItem("access_token");
 
+      try {
+        const resp = await fetch("/api/get_flats", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        console.log(resp.status);
+
+        if (!resp.ok) {
+          throw new Error(`HTTP error! status: ${resp.status}`);
+        }
+
+        const userData = await resp.json();
+        console.log(userData);
+        setResults(userData.flats);
+      } catch (error) {
+        console.error("There was an error!", error);
+      }
+    };
     reqQueries();
+    reqSearches();
   }, []); // The empty array ensures this effect runs only once
 
   const [selectedAddress, setSelectedAddress] = useState([]);
@@ -326,26 +352,33 @@ export default function Dashboard() {
                 Leitud korterid
               </Typography>
               <List>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1-content"
-                    id="panel1-header"
-                  >
-                    {}
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <List>
-                      <ListItem>Price: {}</ListItem>
-                      <ListItem>Area: {}</ListItem>
-                      <ListItem>Rooms: {}</ListItem>
-                    </List>
-                  </AccordionDetails>
-                  <AccordionActions>
-                    Aktiivne {} saadik
-                    <Switch>Active/not</Switch>
-                  </AccordionActions>
-                </Accordion>
+                {results.map((v, index) => {
+                  return (
+                    <Accordion key={index}>
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        aria-controls="panel1-content"
+                        id="panel1-header"
+                      >
+                        <Link href={v.permalink} target="_blank">
+                          {v.location}
+                        </Link>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <List>
+                          <ListItem>Price: {v.location}</ListItem>
+
+                          <ListItem>Price: {v.price}</ListItem>
+                          <ListItem>Area: {v.area}</ListItem>
+                          <ListItem>Rooms: {v.rooms}</ListItem>
+                        </List>
+                      </AccordionDetails>
+                      <AccordionActions>
+                        Aktiivne {v.published} saadik
+                      </AccordionActions>
+                    </Accordion>
+                  );
+                })}
               </List>
             </Paper>
           </Grid>

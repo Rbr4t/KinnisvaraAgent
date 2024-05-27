@@ -23,8 +23,8 @@ class Search(Base):
     price = Column(Float)
     area = Column(Float)
     rooms = Column(Integer, default=0)
-
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime, default=datetime.utcnow)
 
 
 class User(Base):
