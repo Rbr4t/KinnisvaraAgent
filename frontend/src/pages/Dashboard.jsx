@@ -120,6 +120,32 @@ export default function Dashboard() {
     sendReq();
   };
 
+  const reqSearches = async () => {
+    const token = sessionStorage.getItem("access_token");
+
+    try {
+      const resp = await fetch("/api/get_flats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      console.log(resp.status);
+
+      if (!resp.ok) {
+        throw new Error(`HTTP error! status: ${resp.status}`);
+      }
+
+      const userData = await resp.json();
+      console.log(userData);
+      setResults(userData.flats);
+    } catch (error) {
+      console.error("There was an error!", error);
+    }
+  };
+
   useEffect(() => {
     const reqQueries = async () => {
       const token = sessionStorage.getItem("access_token");
@@ -145,35 +171,12 @@ export default function Dashboard() {
         console.error("There was an error!", error);
       }
     };
-    const reqSearches = async () => {
-      const token = sessionStorage.getItem("access_token");
 
-      try {
-        const resp = await fetch("/api/get_flats", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        });
-
-        console.log(resp.status);
-
-        if (!resp.ok) {
-          throw new Error(`HTTP error! status: ${resp.status}`);
-        }
-
-        const userData = await resp.json();
-        console.log(userData);
-        setResults(userData.flats);
-      } catch (error) {
-        console.error("There was an error!", error);
-      }
-    };
     reqQueries();
     reqSearches();
   }, []); // The empty array ensures this effect runs only once
 
+  setTimeout(() => reqSearches(), 1000 * 60);
   const [selectedAddress, setSelectedAddress] = useState([]);
 
   const handleSelectChange = (index, value) => {

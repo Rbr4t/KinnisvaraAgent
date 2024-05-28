@@ -67,7 +67,7 @@ def compute_similarity(input_string, reference_strings):
 
 
 def get_flats(model, url_dict):
-
+    print(model.__dict__)
     with Session() as session:
         if model.rooms is None and model.area is None and model.price is None:
             res = session.query(Flat).filter(
@@ -75,6 +75,9 @@ def get_flats(model, url_dict):
         elif model.rooms is None and model.area is None:
             res = session.query(Flat).filter(
                 Flat.price <= model.price, Flat.published > (date.today() - relativedelta(months=1)), Flat.location.like('%'.join(model.location.split(', '))+"%")).all()
+        elif model.price is None and model.area is None:
+            res = session.query(Flat).filter(
+                Flat.published > (date.today() - relativedelta(months=1)), Flat.location.like('%'.join(model.location.split(', '))+"%")).all()
         elif model.rooms is None:
             res = session.query(Flat).filter(Flat.area >= model.area,
                                              Flat.price <= model.price, Flat.published > (date.today() - relativedelta(months=1)), Flat.location.like('%'.join(model.location.split(', '))+"%")).all()
@@ -122,6 +125,7 @@ def get_flats(model, url_dict):
                     flats.append(o)
                     descriptions["kinnisvara24"].append(
                         description)
+        print([flat.__dict__ for flat in flats])
         return {"flats": flats}
 
 
@@ -256,6 +260,7 @@ async def regular_query():
             flats = get_flats(model, url_dict)["flats"]
             # add flats to db
             for flat in flats:
+                print(flat.id)
                 print(flat)
                 obj = User_Flats(flat_id=flat.id, user_id=model.user_id)
                 session.add(obj)
@@ -283,7 +288,7 @@ def get_id_flats(token: TokenModel):
     with Session() as session:
         ids = session.query(User_Flats).filter(User_Flats.user_id == id).all()
         for x in ids:
-            flat = session.query(Flat).filter(Flat.id == x.id).first()
+            flat = session.query(Flat).filter(Flat.id == x.flat_id).first()
             flats.append(flat)
     return {"flats": flats}
 

@@ -1,6 +1,6 @@
 from database import Base, engine
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from scrapers import kinnisvara24, kv, city24
 from api import API
 from auth import auth
@@ -30,7 +30,7 @@ async def periodic_task():
         await regular_query()
 
         # Sleep for 20 minutes (20 * 60 seconds)
-        await asyncio.sleep(2*60)
+        await asyncio.sleep(20*60)
 
 
 @app.on_event("startup")
